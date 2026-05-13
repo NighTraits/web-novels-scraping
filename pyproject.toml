@@ -1,20 +1,43 @@
 [project]
-name = "web_novels_scrapping"
+name = "book_store"
 version = "0.1.0"
+description = "web books/novel scrapping tool"
 requires-python = ">=3.13.1"
 dependencies = [
-    "camoufox>=0.4.11",
-    "playwright>=1.59.0",
-    "pypub3>=2.0.9",
-    "tqdm>=4.67.3",
+  "camoufox>=0.4.11",
+  "playwright>=1.59.0",
+  "pypub3>=2.0.9",
+  "tqdm>=4.67.3",
+  "dotenv>=1.2.2",
 ]
+
+[project.optional-dependencies]
+dev = ["black>=24.0", "pytest>=7.0", "mypy>=1.0"]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.setuptools.packages.find]
-where = ["src", "scripts"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/EpubFile", "src/Book", "src/WebScrapping", "src/SiteScript"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310", "py311"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.venv
+  | \.git
+  | __pycache__
+  | build
+  | dist
+)/
+'''
+
+[tool.mypy]
+python_version = "3.11"
+strict = true

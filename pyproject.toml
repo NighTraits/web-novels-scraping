@@ -1,0 +1,20 @@
+[project]
+name = "web_novels_scrapping"
+version = "0.1.0"
+requires-python = ">=3.13.1"
+dependencies = [
+    "camoufox>=0.4.11",
+    "playwright>=1.59.0",
+    "pypub3>=2.0.9",
+    "tqdm>=4.67.3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.setuptools.packages.find]
+where = ["src", "scripts"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

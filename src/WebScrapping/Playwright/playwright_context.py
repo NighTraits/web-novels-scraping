@@ -1,14 +1,20 @@
-from typing import Self
-from playwright.async_api import async_playwright, Browser, Page, Locator, Playwright, BrowserContext
-from WebScrapping.models import ILinkInfo
+from typing import Any, Self
+from playwright.async_api import (
+    async_playwright,
+    Browser,
+    Page,
+    Playwright,
+    BrowserContext,
+)
+
 
 class PlaywrightContext:
     def __init__(self, headless: bool = True) -> None:
         self.headless = headless
-        self._playwright: Playwright = None
-        self._browser: Browser = None
-        self._context: BrowserContext = None
-        self._page: Page = None
+        self._playwright: Playwright
+        self._browser: Browser
+        self._context: BrowserContext
+        self._page: Page
 
     async def start(self) -> Self:
         self._playwright = await async_playwright().start()
@@ -20,19 +26,19 @@ class PlaywrightContext:
         )
         self._page = await self._context.new_page()
         return self
-    
+
     async def close(self) -> None:
         await self._context.close()
         await self._browser.close()
         await self._playwright.stop()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         return await self.start()
 
-    async def __aexit__(self, *args) -> None:
+    async def __aexit__(self, *args: Any) -> None:
         # params are required even if not used
         await self.close()
-    
+
     @property
     def browser(self) -> Browser:
         return self._browser

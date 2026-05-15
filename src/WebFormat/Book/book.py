@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Unpack
 from src.models import EBOOKCONTEXT, UNKNOWN
-from src.WebFormat.models import IBase, IChapterInfo
+from src.WebFormat.models import EOrder, IBase, IChapterInfo
 from src.utils import dataclass_to_dict, get_site_from_link, file_to_dataclass
 
 
@@ -11,16 +11,21 @@ class BookContext:
         self.__link: str = kwargs["link"]
         self.__author: str = kwargs.get("author") or UNKNOWN
         self.__source: str = kwargs.get("source") or get_site_from_link(self.__link)
-        self.__title: str | None = None
+        self.__title: str = UNKNOWN
 
         self._book_cover_path: Path
         self._book_index_path: Path
+        self._chapter_order: EOrder = kwargs.get("order") or EOrder.ASC
 
         self._temp_path = Path("temp")
         self._files_path: Path
         self._chapter_path: Path
 
         self._chap_info: list[IChapterInfo] = []
+
+        if title := kwargs.get("title"):
+            self.__title = title
+            self.set_title_and_create_directory(self.title)
 
         self.__set_page_range(kwargs.get("start"), kwargs.get("end"))
 
@@ -50,7 +55,7 @@ class BookContext:
 
     def __set_page_range(self, start: int | None, end: int | None):
         self._start = 0
-        self._end = -1
+        self._end = None
         if not any([start, end]):
             return
 
@@ -76,11 +81,12 @@ class BookContext:
     #         self._end = -1
 
     def __create_file_folder(self, folder_name: str):
-        self._files_path = self._temp_path / f"{folder_name} ({self.source})"
-        self._chapter_path = self._files_path / EBOOKCONTEXT.CHAPTER_FOLDER_NAME
-
+        self._files_path = self._temp_path / f"{folder_name}"
         # create dir all the way to chapter folder
-        self._chapter_path.mkdir(parents=True, exist_ok=True)
+        (self._files_path / EBOOKCONTEXT.CHAPTER_FOLDER_NAME).mkdir(
+            parents=True, exist_ok=True
+        )
+        self._chapter_path = Path(EBOOKCONTEXT.CHAPTER_FOLDER_NAME)
 
         # prepare book cover path
         self._book_cover_path = self._files_path / EBOOKCONTEXT.COVER_FILE_NAME

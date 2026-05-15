@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import NotRequired, TypedDict
+from src.WebFormat.enums import EOrder
 
 
 class IHtmlRef(TypedDict):
@@ -13,10 +14,12 @@ class IHtmlRef(TypedDict):
 
 class IBase(TypedDict):
     link: str
+    title: NotRequired[str | None]
     author: NotRequired[str | None]
     source: NotRequired[str | None]
     start: NotRequired[int | None]
     end: NotRequired[int | None]
+    order: NotRequired[EOrder | None]
 
 
 @dataclass
@@ -26,5 +29,5 @@ class IChapterInfo:
     page_name: str
     chapter_link: str | None
     chapter_title: str
-    chapter_number: int
+    chapter_number: str
     file_path: Path | None = field(default=None)

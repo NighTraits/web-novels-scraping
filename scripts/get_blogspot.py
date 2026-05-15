@@ -1,26 +1,23 @@
 from src.EpubFile import EpubContext
-from src.Sites import GenericTypeA
-from src.WebFormat.enums import BaseRef, EOrder
+from src.Sites.blogspot import Blogspot
+from src.WebFormat.enums import BaseRef
 from src.models import UNKNOWN
 
 
-async def get_from_generic_type_a(
+async def get_from_blogspot(
     ref: BaseRef,
     link: str,
+    start: int,
+    end: int,
     author: str = UNKNOWN,
     title: str | None = None,
-    start: int | None = None,
-    end: int | None = None,
-    hidden: bool = True,
-    order: EOrder = EOrder.ASC,
 ):
-    index_file = await GenericTypeA(
+    index_file = await Blogspot(
         ref=ref,
         link=link,
         author=author,
         title=title,
         start=start,
         end=end,
-        order=order,
-    ).create(hidden)
+    ).create()
     EpubContext(file_path=index_file).create_ebook()

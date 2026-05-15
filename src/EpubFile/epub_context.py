@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import Any, Callable
 from pypub import (  # type: ignore[import]
     Chapter,
     Epub,
@@ -8,8 +8,10 @@ from pypub import (  # type: ignore[import]
     create_chapter_from_text,
     create_chapter_from_url,
 )
+from pypub.factory import SUPPORTED_TAGS  # type: ignore[import]
 from pathlib import Path
 from tqdm import tqdm
+from src.EpubFile.models import ESourceType
 from src.models import EBOOKCONTEXT, UNKNOWN
 from src.WebFormat.models import IChapterInfo
 from src.utils import file_to_dataclass, normalize_text
@@ -43,12 +45,19 @@ class EpubContext:
         self.__set_book_info_from_index(chapter_index)
         self.__set_book_cover_path()
 
+        SUPPORTED_TAGS["span"] = ("bgcolor", "title", "style", "class")
+        SUPPORTED_TAGS["div"] = ("align", "id", "bgcolor", "style", "class")
+        SUPPORTED_TAGS["p"] = ("align", "id", "title", "style", "class")
+
         self.__book_ctx = Epub(
             title=self.__title or UNKNOWN,
             creator=self.__creator or UNKNOWN,
             publisher=self.__publisher or UNKNOWN,
             cover=str(self.__cover),
         )
+
+        if (self.__file_path / "styles.css").exists():
+            self.__book_ctx.css_paths = [str(self.__file_path / "styles.css")]
 
     def __set_book_info_from_index(
         self, chapter_index: list[IChapterInfo] | Path | None
@@ -88,7 +97,7 @@ class EpubContext:
         self,
         title: str,
         content: str | Path,
-        source_type: Literal["file", "html", "text", "url"] = "text",
+        source_type: ESourceType = ESourceType.TEXT,
     ):
         """
         - "file" - allow .html / .xhtml files only.
@@ -97,16 +106,20 @@ class EpubContext:
         - "url" - Convert webpage into a EPUB page.
         """
         chapter_creators: dict[str, Callable[[Any, str], Chapter]] = {
-            "file": lambda x, y: create_chapter_from_file(x, y),
-            "html": lambda x, y: create_chapter_from_html(x, y),
-            "text": lambda x, y: create_chapter_from_text(x, y),
-            "url": lambda x, y: create_chapter_from_url(x, y),
+            ESourceType.FILE: lambda x, y: create_chapter_from_file(
+                x, y, Path(x).resolve().as_uri()
+            ),
+            ESourceType.HTML: lambda x, y: create_chapter_from_html(
+                str(x).encode("utf-8"), y
+            ),
+            ESourceType.TEXT: lambda x, y: create_chapter_from_text(x, y),
+            ESourceType.URL: lambda x, y: create_chapter_from_url(x, y),
         }
 
         chapter = chapter_creators[source_type](content, title)
         self.__book_ctx.add_chapter(chapter)
 
-    def create_ebook(self):
+    def create_ebook(self, source_type: ESourceType = ESourceType.TEXT):
 
         with tqdm(
             iterable=self.__chapter_index,
@@ -118,13 +131,17 @@ class EpubContext:
             for idx in tbar:
                 if not idx.file_path:
                     continue
-                content = Path(idx.file_path).read_text(encoding="utf-8")
-                self.__add_chapter(idx.chapter_title, content)
+                if source_type in [ESourceType.TEXT, ESourceType.HTML]:
+                    content = Path(self.__file_path / idx.file_path).read_text("utf-8")
+                else:
+                    content = str(self.__file_path / idx.file_path)
+                self.__add_chapter(idx.chapter_title, content, source_type)
             tbar.set_description("Insert chapters done.")
 
         counter = 1
         file_name = normalize_text(self.__title)
         save_to = self.__file_path / f"{file_name}.epub"
+
         while save_to.is_file():
             save_to = self.__file_path / f"{file_name} ({counter}).epub"
             counter += 1

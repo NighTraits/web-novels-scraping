@@ -4,7 +4,12 @@ from tqdm import tqdm
 from typing import Unpack, final
 from src.WebFormat.Book import BookContext
 from src.WebFormat.models import IBase, IChapterInfo
-from src.WebScrapping import CamoufoxContext
+from src.WebScrapping import (
+    CamoufoxContext,
+    click_element,
+    get_link_and_text,
+    save_image,
+)
 from src.WebScrapping.models import ILinkInfo
 from src.utils import clean_paragraph, save_as
 
@@ -51,6 +56,7 @@ class WebTypeA(BookContext):
         await self._get_cover(ctx)
 
     async def _get_title(self, ctx: CamoufoxContext):
+        print("Retrieving book title...")
         if not self._title_ref:
             raise ValueError("required title ref not found.")
         work_title = await ctx.page.locator(self._title_ref).first.inner_text()
@@ -58,13 +64,14 @@ class WebTypeA(BookContext):
         print(f"Title: {self.title}")
 
     async def _get_cover(self, ctx: CamoufoxContext):
+        print("Retrieving book cover...")
         if not self._book_cover_ref:
             raise ValueError("required book cover ref not found.")
 
         if self.cover.exists():
             return
 
-        await ctx.save_image(self._book_cover_ref, self.cover)
+        await save_image(ctx.page, self._book_cover_ref, self.cover)
 
     async def _get_chapters_ref(self, ctx: CamoufoxContext):
         if not self._chapter_index_ref:
@@ -73,7 +80,7 @@ class WebTypeA(BookContext):
         # clicks needed to access the index
         if self.__chapter_tab_ref:
             for tab in self.__chapter_tab_ref:
-                await ctx.click_element(tab)
+                await click_element(ctx.page, tab)
 
         # get content
         chapters = await ctx.page.locator(self._chapter_index_ref).all()
@@ -88,7 +95,7 @@ class WebTypeA(BookContext):
             unit="chapter",
         ) as pbar:
             for idx, li in enumerate(pbar, self._start):
-                link_info: ILinkInfo = await ctx.get_link_and_text(li)
+                link_info: ILinkInfo = await get_link_and_text(ctx.page, li)
 
                 if chap_num := re.search(r"\d+", link_info.text):
                     chap_num = int(chap_num.group(0))

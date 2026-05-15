@@ -26,14 +26,14 @@ class EpubContext:
 
     def __init__(
         self,
-        file_path: Path,
+        file_path: Path | str,
         chapter_index: list[IChapterInfo] | Path | None = None,
         title: str | None = None,
         creator: str | None = None,
         cover: Path | None = None,
         publisher: str | None = None,
     ):
-        self.__file_path = file_path
+        self.__file_path = Path(file_path)
         self.__title: str | None = title
         self.__creator: str | None = creator
         self.__publisher: str | None = publisher

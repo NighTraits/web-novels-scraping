@@ -1,8 +1,6 @@
-from pathlib import Path
 from typing import Any, Self
 from camoufox.async_api import AsyncCamoufox
-from playwright.async_api import Browser, BrowserContext, Locator, Page
-from src.WebScrapping.models import ILinkInfo
+from playwright.async_api import Browser, BrowserContext, Page
 
 
 class CamoufoxContext:
@@ -40,26 +38,3 @@ class CamoufoxContext:
     @property
     def page(self) -> Page:
         return self._page
-
-    async def click_element(self, element_ref: str | Locator, timeout: int = 5000):
-        if not isinstance(element_ref, Locator):
-            element_ref = self._page.locator(element_ref)
-        await element_ref.click()
-        await self._page.wait_for_load_state("networkidle")
-        await self._page.wait_for_timeout(timeout)
-
-    async def get_link_and_text(self, element_ref: Locator | str) -> ILinkInfo:
-        if not isinstance(element_ref, Locator):
-            element_ref = self._page.locator(element_ref)
-
-        link_elem = element_ref.get_by_role("link")
-        text = await link_elem.inner_text()
-        href = await link_elem.get_attribute("href")
-        return ILinkInfo(href=href, text=text)
-
-    async def save_image(self, element_ref: str, file_path: Path):
-
-        await self._page.locator(element_ref).screenshot(path=file_path)
-
-        # # can also screenshot entire page
-        # await page.screenshot(path="page.png")

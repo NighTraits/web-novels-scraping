@@ -10,8 +10,15 @@ from src.models import UNKNOWN
 T = TypeVar("T")
 
 
-def save_as(file_name: str, file_path: Path, file_content: str) -> Path:
-    file_path = file_path / file_name
+def _create_directory(file_path: Path) -> Path:
+    if file_path.suffix:
+        file_path = file_path.parent
+    file_path.mkdir(parents=True, exist_ok=True)
+    return file_path
+
+
+def save_as(file_path: Path, file_content: str) -> Path:
+    _create_directory(file_path)
     file_path.write_text(file_content, encoding="utf-8")
     return file_path
 
@@ -51,7 +58,7 @@ def clean_paragraph(text: str) -> str:
 def normalize_text(text: str | None) -> str:
     if not text:
         return ""
-    return re.sub(r'[\\/*?:"<>|]', "", text)
+    return re.sub(r'[\\/*?:"<>|]', "", text.strip())
 
 
 def get_site_from_link(link: str) -> str:
@@ -59,3 +66,12 @@ def get_site_from_link(link: str) -> str:
     if match:
         return match.group(1)
     return UNKNOWN
+
+
+def natural_sort_key(path: Path) -> tuple[str, ...]:
+    """Split string into text/number chunks so '2' < '10' numerically."""
+    name: str = path.name
+    chunks: list[str] = re.split(r"(\d+)", name)
+    return tuple(
+        chunk.zfill(10) if chunk.isdigit() else chunk.lower() for chunk in chunks
+    )

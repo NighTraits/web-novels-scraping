@@ -26,3 +26,5 @@ pip install -e .
 ## Websites covered
 - Novelhi
 - NovLove
+- Wordpress
+- Blogspot
